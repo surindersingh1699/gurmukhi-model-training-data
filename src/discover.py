@@ -73,17 +73,22 @@ class YouTubeDownloader:
             return self._load_existing_metadata(video_id)
 
         logger.info(f"Downloading: {video_url}")
-        opts = self._build_yt_dlp_opts(allow_auto_captions)
-        opts["outtmpl"] = {
+
+        # Step 1: Download audio only (no subtitles — avoids rate limit errors)
+        audio_opts = self._build_audio_opts()
+        audio_opts["outtmpl"] = {
             "default": str(self.raw_audio_dir / "%(id)s.%(ext)s"),
         }
 
         try:
-            with yt_dlp.YoutubeDL(opts) as ydl:
+            with yt_dlp.YoutubeDL(audio_opts) as ydl:
                 info = ydl.extract_info(video_url, download=True)
         except yt_dlp.utils.DownloadError as e:
-            logger.error(f"Failed to download {video_url}: {e}")
+            logger.error(f"Failed to download audio {video_url}: {e}")
             return None
+
+        # Step 2: Download subtitles separately, one language at a time
+        self._download_subtitles(video_url, video_id, allow_auto_captions)
 
         # Move caption files to captions directory
         caption_path, caption_lang, is_auto = self._find_and_move_captions(video_id)
@@ -116,9 +121,9 @@ class YouTubeDownloader:
 
         return result
 
-    def _build_yt_dlp_opts(self, allow_auto_captions: bool) -> dict:
-        """Construct yt-dlp options dictionary."""
-        opts = {
+    def _build_audio_opts(self) -> dict:
+        """Construct yt-dlp options for audio-only download (no subtitles)."""
+        return {
             "format": self.config["audio"]["format"],
             "postprocessors": [
                 {
@@ -126,16 +131,34 @@ class YouTubeDownloader:
                     "preferredcodec": "wav",
                 }
             ],
-            "writesubtitles": True,
-            "writeautomaticsub": allow_auto_captions and self.allow_auto,
-            "subtitleslangs": self.caption_langs,
-            "subtitlesformat": self.config["captions"]["format"],
+            "writesubtitles": False,
+            "writeautomaticsub": False,
             "writeinfojson": False,
             "quiet": False,
             "no_warnings": False,
             "noprogress": False,
         }
-        return opts
+
+    def _download_subtitles(
+        self, video_url: str, video_id: str, allow_auto_captions: bool
+    ):
+        """Download Gurmukhi (pa) subtitles separately from audio."""
+        sub_opts = {
+            "skip_download": True,
+            "writesubtitles": True,
+            "writeautomaticsub": allow_auto_captions and self.allow_auto,
+            "subtitleslangs": ["pa"],
+            "subtitlesformat": self.config["captions"]["format"],
+            "outtmpl": {"default": str(self.raw_audio_dir / "%(id)s.%(ext)s")},
+            "quiet": True,
+            "no_warnings": True,
+        }
+        try:
+            with yt_dlp.YoutubeDL(sub_opts) as ydl:
+                ydl.extract_info(video_url, download=True)
+            logger.info(f"Downloaded Gurmukhi subtitles for {video_id}")
+        except yt_dlp.utils.DownloadError as e:
+            logger.warning(f"Could not download subtitles for {video_id}: {e}")
 
     def _extract_video_id(self, url: str) -> str | None:
         """Extract YouTube video ID from various URL formats."""

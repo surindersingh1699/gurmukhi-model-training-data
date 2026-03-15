@@ -1,5 +1,6 @@
 """Gurmukhi Unicode detection, validation, and normalization utilities."""
 
+import html
 import re
 import unicodedata
 
@@ -37,6 +38,8 @@ def normalize_gurmukhi(text: str) -> str:
     - Collapse multiple spaces into one
     - Strip leading/trailing whitespace
     """
+    # Decode HTML entities (&lt; -> <, &amp; -> &, etc.)
+    text = html.unescape(text)
     # Remove HTML tags
     text = re.sub(r"<[^>]+>", "", text)
     # Remove VTT timestamp tags like <00:00:01.234>

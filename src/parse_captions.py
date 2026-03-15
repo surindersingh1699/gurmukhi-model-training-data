@@ -6,7 +6,7 @@ from dataclasses import dataclass, asdict
 
 import webvtt
 
-from gurmukhi_utils import gurmukhi_ratio, normalize_gurmukhi
+from gurmukhi_utils import gurmukhi_ratio, normalize_gurmukhi, strip_non_gurmukhi
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,8 @@ class CaptionParser:
             end_ms = self._timestamp_to_ms(caption.end)
             text = caption.text
             normalized = normalize_gurmukhi(text)
+            # Strip all non-Gurmukhi characters (removes stray <, numbers, latin chars)
+            normalized = strip_non_gurmukhi(normalized)
 
             if not normalized:
                 continue

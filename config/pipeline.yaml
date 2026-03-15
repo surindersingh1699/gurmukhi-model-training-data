@@ -7,8 +7,6 @@ audio:
 captions:
   preferred_langs:
     - "pa"
-    - "pa-IN"
-    - "hi"
   allow_auto_generated: true
   prefer_manual: true
   format: "vtt"
