@@ -1,0 +1,40 @@
+# Audio download settings
+audio:
+  format: "bestaudio/best"
+  output_template: "%(id)s"
+
+# Caption settings
+captions:
+  preferred_langs:
+    - "pa"
+    - "pa-IN"
+    - "hi"
+  allow_auto_generated: true
+  prefer_manual: true
+  format: "vtt"
+
+# Audio processing
+processing:
+  sample_rate: 16000
+  channels: 1
+  sample_width: 2
+  output_format: "wav"
+  padding_ms: 100
+
+# Quality control thresholds
+quality:
+  min_duration_sec: 0.5
+  max_duration_sec: 30.0
+  min_gurmukhi_ratio: 0.5
+  min_text_length: 2
+
+# Paths (relative to project root)
+paths:
+  raw_audio: "data/raw/audio"
+  raw_captions: "data/raw/captions"
+  raw_metadata: "data/raw/metadata"
+  processed_segments: "data/processed/segments"
+  dataset_wavs: "data/dataset/wavs"
+  dataset_metadata: "data/dataset/metadata.csv"
+  dataset_metadata_extended: "data/dataset/metadata_extended.csv"
+  dataset_stats: "data/dataset/stats.json"

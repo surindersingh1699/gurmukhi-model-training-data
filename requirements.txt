@@ -1,0 +1,5 @@
+yt-dlp>=2024.1.0
+pydub>=0.25.1
+webvtt-py>=0.5.0
+pyyaml>=6.0
+tqdm>=4.65.0

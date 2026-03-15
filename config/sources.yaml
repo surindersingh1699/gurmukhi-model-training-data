@@ -1,0 +1,21 @@
+# Sehaj Path sources (clean spoken recitation)
+sehaj_path:
+  playlists:
+    # Add YouTube playlist URLs here
+    # - url: "https://www.youtube.com/playlist?list=PLAYLIST_ID"
+    #   name: "Speaker Name"
+    #   speaker_id: "speaker_01"
+    []
+  videos:
+    # Add individual video URLs here
+    # - url: "https://www.youtube.com/watch?v=VIDEO_ID"
+    #   name: "Description"
+    #   speaker_id: "speaker_01"
+    []
+  allow_auto_captions: true
+
+# Kirtan sources (singing with instruments) — add later
+kirtan:
+  playlists: []
+  videos: []
+  allow_auto_captions: false  # ONLY manual captions — auto CC is unusable for singing
