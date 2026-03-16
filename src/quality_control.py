@@ -43,10 +43,10 @@ class QualityController:
         if ratio < self.min_gurmukhi_ratio:
             return False, "low_gurmukhi"
 
-        # Check WAV file exists
-        wav_path = segment.get("wav_path", "")
-        if wav_path and not Path(wav_path).exists():
-            return False, "missing_wav"
+        # Check audio file exists
+        audio_path = segment.get("audio_path", "")
+        if audio_path and not Path(audio_path).exists():
+            return False, "missing_audio"
 
         return True, "ok"
 

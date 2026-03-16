@@ -1,74 +1,81 @@
-"""Assemble the final LJSpeech-format dataset."""
+"""Assemble the final dataset in HuggingFace datasets format."""
 
 import json
 import logging
-import shutil
 from pathlib import Path
+
+from datasets import Audio, Dataset, Features, Value
 
 logger = logging.getLogger(__name__)
 
 
 class DatasetBuilder:
     def __init__(self, config: dict):
-        self.wavs_dir = Path(config["paths"]["dataset_wavs"])
-        self.metadata_path = Path(config["paths"]["dataset_metadata"])
-        self.metadata_ext_path = Path(config["paths"]["dataset_metadata_extended"])
+        self.dataset_dir = Path(config["paths"]["dataset_dir"])
         self.stats_path = Path(config["paths"]["dataset_stats"])
+        self.sample_rate = config["processing"]["sample_rate"]
 
     def build(self, segments: list[dict], stats: dict):
         """
-        Assemble the final dataset:
-        1. Copy WAVs to dataset/wavs/
-        2. Write metadata.csv (LJSpeech format)
-        3. Write metadata_extended.csv (full provenance)
-        4. Write stats.json
+        Assemble the final HuggingFace dataset:
+        1. Build dataset from QC-passed segments
+        2. Save to disk in Arrow/Parquet format
+        3. Write stats.json
         """
-        self.wavs_dir.mkdir(parents=True, exist_ok=True)
-
-        metadata_lines = []
-        extended_lines = []
-        extended_lines.append(
-            "id|transcript|duration_sec|source_video_id|start_ms|end_ms"
-        )
-
-        copied = 0
+        # Collect valid segments
+        records = []
         for seg in segments:
-            src = Path(seg["wav_path"])
-            if not src.exists():
-                logger.warning(f"WAV not found, skipping: {src}")
+            audio_path = seg.get("audio_path", "")
+            if not audio_path or not Path(audio_path).exists():
+                logger.warning(f"Audio not found, skipping: {audio_path}")
                 continue
 
-            dst = self.wavs_dir / src.name
-            if src != dst:
-                shutil.copy2(str(src), str(dst))
-
-            filename = seg["filename"]
-            transcript = seg["transcript"]
-
-            # LJSpeech format: filename|transcript (no header, pipe-delimited)
-            metadata_lines.append(f"{filename}|{transcript}")
-
-            # Extended format with provenance
-            duration_sec = seg["duration_ms"] / 1000.0
-            extended_lines.append(
-                f"{filename}|{transcript}|{duration_sec:.3f}|"
-                f"{seg['source_video_id']}|{seg['start_ms']}|{seg['end_ms']}"
+            records.append(
+                {
+                    "audio": audio_path,
+                    "transcription": seg["transcript"],
+                    "speaker_id": seg.get("speaker_id", "unknown"),
+                    "source_video_id": seg.get("source_video_id", ""),
+                    "duration_sec": seg["duration_ms"] / 1000.0,
+                }
             )
-            copied += 1
 
-        # Write metadata.csv
-        with open(self.metadata_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(metadata_lines) + "\n")
+        if not records:
+            logger.warning("No valid segments to build dataset from")
+            return
 
-        # Write metadata_extended.csv
-        with open(self.metadata_ext_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(extended_lines) + "\n")
+        # Create HuggingFace Dataset
+        features = Features(
+            {
+                "audio": Audio(sampling_rate=self.sample_rate),
+                "transcription": Value("string"),
+                "speaker_id": Value("string"),
+                "source_video_id": Value("string"),
+                "duration_sec": Value("float64"),
+            }
+        )
+
+        ds = Dataset.from_dict(
+            {
+                "audio": [r["audio"] for r in records],
+                "transcription": [r["transcription"] for r in records],
+                "speaker_id": [r["speaker_id"] for r in records],
+                "source_video_id": [r["source_video_id"] for r in records],
+                "duration_sec": [r["duration_sec"] for r in records],
+            },
+            features=features,
+        )
+
+        # Save to disk
+        self.dataset_dir.mkdir(parents=True, exist_ok=True)
+        ds.save_to_disk(str(self.dataset_dir))
 
         # Write stats.json
+        self.stats_path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.stats_path, "w", encoding="utf-8") as f:
             json.dump(stats, f, ensure_ascii=False, indent=2)
 
         logger.info(
-            f"Dataset built: {copied} segments -> {self.wavs_dir}, "
-            f"metadata -> {self.metadata_path}"
+            f"Dataset built: {len(records)} segments -> {self.dataset_dir} "
+            f"(HuggingFace format, loadable with load_from_disk)"
         )

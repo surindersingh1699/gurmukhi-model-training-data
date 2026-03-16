@@ -169,7 +169,7 @@ def stage_qc(config: dict):
 
 
 def stage_build(config: dict):
-    """Stage 5: Build final LJSpeech-format dataset."""
+    """Stage 5: Build final HuggingFace dataset."""
     passed = load_manifest("qc_passed_manifest.json")
     stats = load_manifest("qc_stats.json")
 

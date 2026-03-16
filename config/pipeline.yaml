@@ -16,7 +16,7 @@ processing:
   sample_rate: 16000
   channels: 1
   sample_width: 2
-  output_format: "wav"
+  output_format: "flac"
   padding_ms: 100
 
 # Quality control thresholds
@@ -32,7 +32,5 @@ paths:
   raw_captions: "data/raw/captions"
   raw_metadata: "data/raw/metadata"
   processed_segments: "data/processed/segments"
-  dataset_wavs: "data/dataset/wavs"
-  dataset_metadata: "data/dataset/metadata.csv"
-  dataset_metadata_extended: "data/dataset/metadata_extended.csv"
+  dataset_dir: "data/dataset"
   dataset_stats: "data/dataset/stats.json"

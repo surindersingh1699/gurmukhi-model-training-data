@@ -3,3 +3,5 @@ pydub>=0.25.1
 webvtt-py>=0.5.0
 pyyaml>=6.0
 tqdm>=4.65.0
+datasets>=3.0.0
+soundfile>=0.12.1

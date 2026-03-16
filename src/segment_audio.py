@@ -24,7 +24,7 @@ class AudioSegmenter:
     ) -> list[dict]:
         """
         Slice audio into segments based on caption timestamps.
-        Returns list of segment dicts with wav_path and transcript.
+        Returns list of segment dicts with audio_path and transcript.
         """
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
@@ -51,15 +51,15 @@ class AudioSegmenter:
             # Slice audio
             clip = audio[start_ms:end_ms]
 
-            # Export WAV
-            filename = f"{video_id}_{i:05d}.wav"
-            wav_path = output_path / filename
-            clip.export(str(wav_path), format="wav")
+            # Export FLAC (lossless, ~50% smaller than WAV)
+            filename = f"{video_id}_{i:05d}.flac"
+            audio_path = output_path / filename
+            clip.export(str(audio_path), format="flac")
 
             results.append(
                 {
-                    "wav_path": str(wav_path),
-                    "filename": filename.replace(".wav", ""),
+                    "audio_path": str(audio_path),
+                    "filename": filename.replace(".flac", ""),
                     "transcript": seg["text_normalized"],
                     "duration_ms": end_ms - start_ms,
                     "source_video_id": video_id,
